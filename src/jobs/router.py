@@ -5,7 +5,7 @@ from src.auth.dependencies import user_dependency
 from src.database import db_dependency
 from src.jobs.models import Jobs
 from src.jobs.schemas import SearchForJobRequest, SaveJobRequest
-from src.jobs.utils import scrape_nodeflair, scrape_jobs_db
+from src.jobs.utils import JobScraper
 import random
 
 router = APIRouter(
@@ -14,15 +14,14 @@ router = APIRouter(
 )
 
 
-@router.post("/search", )
+@router.post("/search")
 async def search_for_jobs(request: SearchForJobRequest):
-    node_flair_data = await scrape_nodeflair(request.title)
-    job_db_data = await scrape_jobs_db()
-    combined_list = node_flair_data + job_db_data
-    random.shuffle(combined_list)
+    scraper = JobScraper(request.title)
+    jobs = await scraper.scrape_jobs()
     return {
-        'data': combined_list
+        'data': jobs
     }
+
 
 @router.get("/")
 async def get_all_jobs_by_user_id(user: user_dependency, db: db_dependency):
@@ -30,6 +29,7 @@ async def get_all_jobs_by_user_id(user: user_dependency, db: db_dependency):
         raise HTTPException(status_code=401, detail='Authentication Failed')
     job_model = db.query(Jobs).filter(Jobs.user_id == user.get('id')).all()
     return job_model
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def save_job(user: user_dependency, db: db_dependency, request: SaveJobRequest):
