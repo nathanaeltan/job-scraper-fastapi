@@ -6,7 +6,6 @@ from src.database import db_dependency
 from src.jobs.models import Jobs
 from src.jobs.schemas import SearchForJobRequest, SaveJobRequest
 from src.jobs.utils import JobScraper
-import random
 
 router = APIRouter(
     prefix='/jobs',
@@ -45,6 +44,7 @@ async def save_job(user: user_dependency, db: db_dependency, request: SaveJobReq
 async def update_job_status(user: user_dependency, db: db_dependency, job_id):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
+
     job_model = db.query(Jobs).filter(Jobs.id == job_id).filter(Jobs.user_id == user.get('id')).first()
     if job_model is None:
         raise HTTPException(status_code=404, detail='Job not found')
